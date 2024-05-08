@@ -6,22 +6,33 @@ app = Flask(__name__)
 CORS(app)
 
 summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
-translator = pipeline("translation_en_to_fr", model="t5-base")
 qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
 
 def chunk_text(text, chunk_size):
     
     return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
+def get_translation_pipeline(src_lang, tgt_lang):
+    model_id = f"Helsinki-NLP/opus-mt-{src_lang}-{tgt_lang}"
+    return pipeline("translation", model=model_id)
+
+
 
 @app.route('/translate', methods=['POST'])
 def translate_text():
     data = request.json
+    src_lang = data.get('source_language', 'en')
+    tgt_lang = data.get('target_language', 'es')
     text = data['text']
-    chunks = chunk_text(text, 1024)
-    translations = [translator(chunk)[0]['translation_text'] for chunk in chunks]
-    final_translation = ' '.join(translations)
-    return jsonify(translation=final_translation)
+    try:
+        translator = get_translation_pipeline(src_lang, tgt_lang)
+        chunks = chunk_text(text, 1024)
+        translations = [translator(chunk)[0]['translation_text'] for chunk in chunks]
+        final_translation = ' '.join(translations)
+        return jsonify(translation=final_translation)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
 
 @app.route('/summarize', methods=['POST'])
 def summarize_text():
