@@ -78,7 +78,9 @@ function App() {
             <textarea placeholder="Enter text to translate..." value={input} onChange={handleInputChange} />
         )}
         <button onClick={handleSubmit}>Submit</button>
-        <div>{typeof result === 'object' ? JSON.stringify(result) : result}</div>
+        <div className="result-box">
+  {result ? (typeof result === 'object' ? JSON.stringify(result) : result) : "Your result will appear here..."}
+</div>
       </div>
     );
 }
